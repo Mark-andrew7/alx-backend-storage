@@ -6,7 +6,22 @@ Cache class that stores instance of Redis client
 import redis
 import uuid
 from typing import Union, Callable, Optional
+from functools import wraps
 
+
+def count_calls(method: Callable) -> Callable:
+    """
+    Count the number of calls to a method
+    """
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        """
+        Declare a Wrapper function
+        """
+        self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwargs)
+    return wrapper
 
 class Cache:
     """
@@ -19,6 +34,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
         Generates a random key, stores input data in Redis using the key
